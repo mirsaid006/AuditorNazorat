@@ -1,4 +1,4 @@
-# 🕵️‍♂️ GovTech AI Auditor Pro
+# 🕵️‍♂️ Auditor Nazorat
 
 An enterprise-grade, AI-driven Document Intelligence System designed to detect "tricky moments," hidden corruption loopholes, and artificially inflated prices in government procurement documents (tenders, agreements, and auctions).
 
