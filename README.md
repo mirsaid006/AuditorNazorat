@@ -1,20 +1,42 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🛡️ Anti-Corruption AI: Document Intelligence System
 
-# Run and deploy your AI Studio app
+**O'zbekiston davlat xaridlari uchun korrupsion xavflarni avtomatik aniqlash tizimi.**
 
-This contains everything you need to run your app locally.
+Ushbu tizim sun'iy intellekt (Gemini 2.5 Flash) yordamida tender hujjatlari, shartnomalar va auktsion shartlarini tahlil qiladi. Tizimning asosiy vazifasi — matnlar orasiga yashirilgan, inson ko'zi bilan ilg'ash qiyin bo'lgan korrupsion "tuzoqlar" va qonunbuzarliklarni fosh qilishdir.
 
-View your app in AI Studio: https://ai.studio/apps/197043a1-1b60-4bbc-9bd1-d7cf60d58b3e
+---
 
-## Run Locally
+## 🚀 Loyiha Maqsadi
+Davlat xaridlari jarayonida shaffoflikni ta'minlash va quyidagi manipulyatsiyalarni aniqlash:
+*   **Texnik cheklovlar:** Faqat bitta yetkazib beruvchi uchun moslashtirilgan o'ta maxsus talablar.
+*   **Mantiqsiz shartlar:** Masalan, texnika uchun real bo'lmagan kafolat muddatlari (15 yil va h.k.).
+*   **Zaharli jamlanma (Bundling):** Raqobatni cheklash uchun mantiqsiz tovarlarni bitta lotga birlashtirish.
+*   **Huquqiy tuzoqlar:** Shartnomadagi yashirin jarimalar yoki nohaq bekor qilish shartlari.
 
-**Prerequisites:**  Node.js
+---
 
+## 🛠 Texnik Stek (Architecture)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Loyiha apparat cheklovlarini (NVIDIA 720M) hisobga olgan holda **Hybrid-Cloud** arxitekturasida qurilgan:
+
+*   **Logic:** Python 3.10+
+*   **AI Engine:** Google Gemini 2.5 Flash API (Mantiqiy tahlil va huquqiy xulosa uchun).
+*   **PDF Processing:** PyMuPDF (CPU orqali matnni tezkor ajratib olish).
+*   **Containerization:** Docker (Tizimni istalgan muhitda bir xil ishlashini ta'minlash uchun).
+*   **Prompt Engineering:** Chain-of-Thought (CoT) metodologiyasi asosida yozilgan anti-korrupsiya ko'rsatmalari.
+
+---
+
+## 📂 Loyiha Strukturasi
+```text
+├── app/
+│   ├── main.py            # Asosiy ishga tushirish skripti
+│   ├── parser.py          # PDF-ni matnga o'tkazish moduli
+│   ├── analyzer.py        # Gemini API bilan aloqa moduli
+│   └── utils.py           # Matnni tozalash va normalizatsiya
+├── data/
+│   ├── uploads/           # Tahlil qilinadigan PDF hujjatlar
+│   └── reports/           # Tayyor tahlil natijalari (JSON/PDF)
+├── .env                   # API kalitlar va sozlamalar
+├── Dockerfile             # Konteyner sozlamalari
+└── requirements.txt       # Zarur kutubxonalar ro'yxati
