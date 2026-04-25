@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GovTech: AI Auditor Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root {
+            --bg-base: #020617; --bg-sidebar: #0f172a; --bg-card: #1e293b; --bg-card-hover: #334155;
+            --accent-blue: #3b82f6; --accent-indigo: #6366f1; --text-main: #f8fafc; --text-muted: #94a3b8;
+            --border-color: #334155; --danger: #ef4444; --warning: #f59e0b; --info: #0ea5e9; --success: #10b981;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: radial-gradient(circle at top right, #0f172a, var(--bg-base)); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 2rem 1.2rem; z-index: 50; box-shadow: 4px 0 15px rgba(0,0,0,0.5); }
+        .brand { font-size: 1.4rem; font-weight: 800; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #60a5fa, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; padding-left: 0.5rem; }
+        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
+        .nav-item { padding: 1rem; border-radius: 8px; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 12px; position: relative; font-size: 0.95rem; }
+        .nav-item:hover { background-color: var(--bg-card); color: var(--text-main); transform: translateX(5px); }
+        .nav-item.active { background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), transparent); color: var(--accent-blue); border-left: 4px solid var(--accent-blue); }
+
+        /* --- MAIN CONTENT & PAGES --- */
+        .main-content { flex-grow: 1; overflow-y: auto; padding: 2rem 3rem; scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg-base); } ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        .page { display: none; max-width: 1400px; margin: 0 auto; animation: fadeUp 0.3s ease-out; }
+        .page.active { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .page-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; color: #fff; }
+
+        /* --- SHARED CARD STYLES --- */
+        .card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+
+        /* --- DASHBOARD SPECIFIC --- */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-bottom: 1.2rem; }
+        .dashboard-grid-top { display: grid; grid-template-columns: 2fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem; }
+        .dashboard-grid-bottom { display: grid; grid-template-columns: 2fr 1fr; gap: 1.2rem; margin-bottom: 1.2rem; }
+        .stat-card-inner { display: flex; justify-content: space-between; align-items: flex-start; }
+        .stat-title { color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 2.2rem; font-weight: 800; margin-top: 0.3rem; }
+        .stat-icon { padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); }
+        .chart-container { position: relative; height: 250px; width: 100%; }
+        .doughnut-container { position: relative; height: 220px; width: 100%; display: flex; justify-content: center;}
+        .list-item { display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center; font-size: 0.9rem;}
+        .progress-bar { width: 100%; height: 6px; background: #0f172a; border-radius: 3px; margin-bottom: 1.2rem; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent-indigo), var(--accent-blue)); }
+        .integration-item { display: flex; align-items: center; padding: 0.8rem; background: rgba(15, 23, 42, 0.6); border-radius: 8px; margin-bottom: 0.8rem; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 12px; position: relative; }
+        .status-dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-dot.syncing { background: var(--warning); box-shadow: 0 0 8px var(--warning); animation: pulse 2s infinite; }
+        @keyframes pulse { 50% { opacity: 0.5; } }
+        .integration-details h4 { font-size: 0.95rem; color: #fff; margin-bottom: 0.1rem; }
+        .integration-details p { font-size: 0.75rem; color: var(--text-muted); }
+        .integration-ping { margin-left: auto; font-size: 0.75rem; color: var(--success); font-family: monospace; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px;}
+        .activity-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        .activity-table th { text-align: left; padding: 0.8rem; color: var(--text-muted); font-size: 0.85rem; border-bottom: 1px solid var(--border-color); }
+        .activity-table td { padding: 1rem 0.8rem; font-size: 0.9rem; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+        .activity-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .badge-sm { padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+
+        /* --- UPGRADED SCANNER STYLES --- */
+        .scanner-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start; }
+        .upload-area { border: 2px dashed var(--accent-blue); padding: 3rem 2rem; border-radius: 12px; text-align: center; background: rgba(59, 130, 246, 0.05); cursor: pointer; transition: 0.3s; margin-bottom: 1.5rem;}
+        .upload-area:hover { background: rgba(59, 130, 246, 0.1); border-color: var(--accent-indigo); }
+        .upload-area input[type=file] { display: none; }
+        .btn-analyze { width: 100%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo)); color: white; border: none; padding: 1.2rem; font-size: 1.1rem; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.3s;}
+        .btn-analyze:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .checklist-item { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; color: var(--text-muted); font-size: 0.95rem; padding: 0.5rem; border-radius: 6px; background: rgba(0,0,0,0.2);}
+        .checklist-item.ready { color: var(--success); border-left: 3px solid var(--success); }
+        .checklist-icon { width: 20px; text-align: center; font-weight: bold; }
+
+        /* AI Terminal Animation */
+        .terminal-box { background: #020617; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; height: 180px; overflow-y: auto; margin-top: 1.5rem; display: none; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        .terminal-box.active { display: block; }
+        .terminal-line { margin-bottom: 0.5rem; color: #10b981; }
+        .terminal-line.dim { color: #64748b; }
+        .terminal-line.warn { color: #f59e0b; }
+
+        .result-card { background: var(--bg-card); border-radius: 8px; padding: 1.5rem; border-left: 5px solid; margin-top: 1.5rem; }
+        .severity-High { border-color: var(--danger); }
+        .severity-Medium { border-color: var(--warning); }
+        .severity-Low { border-color: var(--info); }
+
+        /* --- UPGRADED NOTIFICATIONS STYLES --- */
+        .notif-layout { display: grid; grid-template-columns: 250px 1fr; gap: 2rem; align-items: start; height: calc(100vh - 120px); }
+        .notif-sidebar { display: flex; flex-direction: column; gap: 0.5rem; }
+        .notif-filter { padding: 0.8rem 1rem; border-radius: 8px; cursor: pointer; color: var(--text-muted); font-weight: 600; display: flex; justify-content: space-between; transition: 0.2s;}
+        .notif-filter:hover { background: rgba(255,255,255,0.05); color: #fff;}
+        .notif-filter.active { background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); }
+        .notif-filter-count { background: var(--bg-base); padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; }
+
+        .notif-feed { overflow-y: auto; padding-right: 1rem; height: 100%; display: flex; flex-direction: column; gap: 1rem; }
+        .rich-notif-card { display: flex; gap: 1.5rem; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; transition: 0.2s; position: relative; overflow: hidden;}
+        .rich-notif-card:hover { border-color: #475569; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);}
+        .rich-notif-card.unread::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent-blue); }
+        .notif-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        .icon-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .icon-info { background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); }
+        .icon-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .notif-content { flex-grow: 1; }
+        .notif-header-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .notif-actions { display: flex; gap: 10px; margin-top: 1rem; }
+        .btn-sm { padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-primary-sm { background: var(--accent-blue); color: white; }
+        .btn-primary-sm:hover { background: var(--accent-indigo); }
+        .btn-secondary-sm { background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-secondary-sm:hover { background: rgba(255,255,255,0.1); }
+
+        /* --- REPORTING MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 2.5rem; width: 100%; max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); text-align: center;
+        }
+        .encrypt-bar-container {
+            width: 100%; height: 8px; background: var(--bg-base); border-radius: 4px;
+            margin: 1.5rem 0; overflow: hidden; position: relative;
+        }
+        .encrypt-bar-fill {
+            height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--success));
+            width: 0%; transition: width 0.1s linear;
+        }
+        .modal-icon { font-size: 3rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            AI Auditor Pro
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('dashboard', this)">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Bosh Panel
+            </li>
+            <li class="nav-item" onclick="switchTab('scanner', this)">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Tender Skaneri
+            </li>
+            <li class="nav-item" onclick="switchTab('notifications', this)">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                Xabarlar
+            </li>
+        </ul>
+        <div style="margin-top: auto; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            Model: Gemini 2.5 Flash<br>Ulanish: <span style="color: var(--success);">Stabil</span>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <div id="dashboard" class="page active">
+            <h1 class="page-title">Statistika va Tahlil Paneli</h1>
+            <div class="stats-row">
+                <div class="card"><div class="stat-card-inner"><div><div class="stat-title">Tekshirilgan Hujjatlar</div><div class="stat-value text-main">845</div></div><div class="stat-icon" style="color: var(--accent-blue);">📄</div></div></div>
+                <div class="card"><div class="stat-card-inner"><div><div class="stat-title">Topilgan Qoidabuzarliklar</div><div class="stat-value" style="color: var(--danger);" id="stat-total">0</div></div><div class="stat-icon" style="color: var(--danger);">🚨</div></div></div>
+                <div class="card"><div class="stat-card-inner"><div><div class="stat-title">Ko'rib Chiqilmagan</div><div class="stat-value" style="color: var(--warning);" id="stat-unviewed">0</div></div><div class="stat-icon" style="color: var(--warning);">👁️</div></div></div>
+                <div class="card"><div class="stat-card-inner"><div><div class="stat-title">Tejalgan Mablag'</div><div class="stat-value" style="color: var(--success);">4.2B+</div></div><div class="stat-icon" style="color: var(--success);">💰</div></div></div>
+            </div>
+            <div class="dashboard-grid-top">
+                <div class="card"><h3 class="section-title">Haftalik Tahlil Dinamikasi</h3><div class="chart-container"><canvas id="trendChart"></canvas></div></div>
+                <div class="card"><h3 class="section-title">Davlat Tizimlari <span class="badge-sm" style="background: var(--success); color: #000;">LIVE</span></h3>
+                    <div class="integration-item"><div class="status-dot active"></div><div class="integration-details"><h4>Lex.uz</h4><p>Qonunchilik bazasi</p></div><div class="integration-ping">12ms</div></div>
+                    <div class="integration-item"><div class="status-dot active"></div><div class="integration-details"><h4>Xarid.uzex.uz</h4><p>Tenderlar ma'lumotlar bazasi</p></div><div class="integration-ping">45ms</div></div>
+                    <div class="integration-item"><div class="status-dot syncing"></div><div class="integration-details"><h4>Soliq.uz Data</h4><p>Bozor narxlari indeksi</p></div><div class="integration-ping" style="color: var(--warning); background: rgba(245,158,11,0.1);">Sinx...</div></div>
+                </div>
+            </div>
+            <div class="dashboard-grid-bottom">
+                <div class="card"><h3 class="section-title">Eng ko'p uchraydigan sxemalar</h3><div id="common-tricks-list">Yuklanmoqda...</div></div>
+                <div class="card"><h3 class="section-title">Xavf Darajasi Taqsimoti</h3><div class="doughnut-container"><canvas id="severityChart"></canvas></div></div>
+            </div>
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 class="section-title">So'nggi Tahlil Qilingan Tenderlar</h3>
+                <table class="activity-table">
+                    <thead><tr><th>Tender ID</th><th>Buyurtmachi</th><th>Summa (UZS)</th><th>Xavf Holati</th><th>Vaqt</th></tr></thead>
+                    <tbody>
+                        <tr><td style="color: var(--accent-blue);">#TR-2026-892</td><td>Sog'liqni Saqlash Vazirligi</td><td>1,200,000,000</td><td><span class="badge-sm" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid #ef4444;">High (Qizil)</span></td><td style="color: var(--text-muted);">12 daqiqa oldin</td></tr>
+                        <tr><td style="color: var(--accent-blue);">#TR-2026-891</td><td>Xalq Ta'limi Boshqarmasi</td><td>450,000,000</td><td><span class="badge-sm" style="background: rgba(16,185,129,0.2); color: #6ee7b7; border: 1px solid #10b981;">Toza (Yashil)</span></td><td style="color: var(--text-muted);">45 daqiqa oldin</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="scanner" class="page">
+            <h1 class="page-title">Tender Hujjatini Chuqur Tekshirish</h1>
+
+            <div class="scanner-layout">
+                <div>
+                    <div class="card">
+                        <div class="upload-area" id="dropZone" onclick="document.getElementById('pdfInput').click()">
+                            <div style="font-size: 3.5rem; margin-bottom: 10px;">📄</div>
+                            <h3 id="uploadText" style="color: #fff; margin-bottom: 5px;">PDF hujjatni yuklash uchun bosing</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">Maksimal hajm: 50MB. Format: .pdf</p>
+                            <input type="file" id="pdfInput" accept="application/pdf" onchange="handleFileSelect(this)">
+                        </div>
+                        <button id="analyzeBtn" class="btn-analyze" onclick="analyzePDF()">AI Auditor Analizini Boshlash</button>
+
+                        <div id="aiTerminal" class="terminal-box">
+                            <div id="terminalContent"></div>
+                        </div>
+                    </div>
+                    <div id="resultsArea"></div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <h3 class="section-title">Tizim Tayyorgarligi</h3>
+                        <div class="checklist-item ready"><span class="checklist-icon">✓</span> Gemini 2.5 Flash ulanishi faol</div>
+                        <div class="checklist-item ready"><span class="checklist-icon">✓</span> Lex.uz qonunchilik bazasi yuklandi</div>
+                        <div class="checklist-item ready"><span class="checklist-icon">✓</span> Bozor narxlari indeksi yangilandi</div>
+                        <div class="checklist-item ready"><span class="checklist-icon">✓</span> NLP Vektorizatsiya dvigateli tayyor</div>
+
+                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                            <h4 style="color: #fff; margin-bottom: 0.5rem; font-size: 0.9rem;">Qanday ishlaydi?</h4>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5;">Tizim hujjatni abzaslar va qatorlarga bo'lib, sun'iy intellekt orqali mantiqiy xatoliklar, narx manipulyatsiyalari va yashirin jarimalarni aniqlaydi.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="notifications" class="page">
+            <h1 class="page-title">Xabarlar Qutisi</h1>
+
+            <div class="notif-layout">
+                <div class="notif-sidebar">
+                    <div class="notif-filter active">
+                        <span>📥 Barcha xabarlar</span> <span class="notif-filter-count">12</span>
+                    </div>
+                    <div class="notif-filter">
+                        <span>🚨 Xavfli Tenderlar</span> <span class="notif-filter-count" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5;">3</span>
+                    </div>
+                    <div class="notif-filter">
+                        <span>💡 Tizim Yangilanishi</span> <span class="notif-filter-count">5</span>
+                    </div>
+                    <div class="notif-filter" style="margin-top: 1rem; border-top: 1px solid var(--border-color); border-radius: 0; padding-top: 1rem;">
+                        <span>📁 Arxiv</span>
+                    </div>
+                </div>
+
+                <div class="notif-feed" id="notif-list-rich">
+                    </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="reportModal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modalIcon" class="modal-icon">🔐</div>
+            <h2 id="modalTitle" style="color: #fff; margin-bottom: 0.5rem;">Ma'lumotlar Shifrlanmoqda...</h2>
+            <p id="modalDesc" style="color: var(--text-muted); font-size: 0.9rem;">AES-256 shifrlash orqali xavfsiz kanal yaratilmoqda.</p>
+
+            <div class="encrypt-bar-container">
+                <div id="encryptBar" class="encrypt-bar-fill"></div>
+            </div>
+
+            <p id="modalStatus" style="font-family: monospace; color: var(--accent-blue); font-size: 0.85rem;">[Tizimga ulanilmoqda...]</p>
+
+            <button id="closeModalBtn" class="btn-secondary-sm" style="margin-top: 1.5rem; display: none; width: 100%; padding: 0.8rem;" onclick="closeModal()">Yopish</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Navigation ---
+        function switchTab(pageId, element) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        // --- Scanner UI Handlers ---
+        function handleFileSelect(input) {
+            if (input.files && input.files.length > 0) {
+                document.getElementById('uploadText').innerHTML = `Tayyor: <span style="color: var(--accent-blue);">${input.files[0].name}</span>`;
+                document.getElementById('dropZone').style.borderColor = "var(--success)";
+            }
+        }
+
+        function runTerminalAnimation() {
+            const terminal = document.getElementById('aiTerminal');
+            const content = document.getElementById('terminalContent');
+            terminal.classList.add('active');
+            content.innerHTML = '';
+
+            const logs = [
+                "> Hujjat yuklanmoqda... OK",
+                "> PDF strukturasi tahlil qilinmoqda (PyMuPDF)...",
+                "> Hujjat tarkibi sahifa va qatorlarga ajratilmoqda...",
+                "> NLP matn vektorizatsiyasi boshlandi...",
+                "> Lex.uz 684-sonli qonun parametrlari bilan solishtirilmoqda...",
+                "> Bozor narxlari (Soliq.uz) bo'yicha og'ishlar tekshirilmoqda...",
+                "> Gemini 2.5 Flash modeliga so'rov yuborilmoqda... Kuting...",
+                "<span class='terminal-line warn'>[DIQQAT] Anomaliyalar ehtimoli yuqori baholanmoqda...</span>",
+                "> Xulosa formati JSON ga o'girilmoqda..."
+            ];
+
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < logs.length) {
+                    content.innerHTML += `<div class="terminal-line ${i < 3 ? 'dim' : ''}">${logs[i]}</div>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                    i++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 600);
+        }
+
+        // --- API Integration ---
+        async function fetchDashboardData() {
+            try {
+                const res = await fetch('/api/dashboard');
+                const json = await res.json();
+                document.getElementById('stat-total').innerText = json.data.total_found;
+                document.getElementById('stat-unviewed').innerText = json.data.unviewed;
+                let html = "";
+                const maxCount = Math.max(...json.data.most_common.map(t => t.count));
+                json.data.most_common.forEach(trick => {
+                    const pct = (trick.count / maxCount) * 100;
+                    html += `<div><div class="list-item"><span style="color: #e2e8f0;">${trick.name}</span><span style="font-weight:bold;" class="${trick.color}">${trick.count}</span></div><div class="progress-bar"><div class="progress-fill" style="width: ${pct}%;"></div></div></div>`;
+                });
+                document.getElementById('common-tricks-list').innerHTML = html;
+            } catch (err) { console.error("Dash err:", err); }
+        }
+
+        async function fetchNotifications() {
+            try {
+                const res = await fetch('/api/notifications');
+                const json = await res.json();
+                let html = "";
+                json.data.forEach(n => {
+                    let iconHTML = `<div class="notif-icon icon-info">💡</div>`;
+                    if(n.title.includes('xavfli')) iconHTML = `<div class="notif-icon icon-danger">🚨</div>`;
+                    if(n.title.includes('Shubhali')) iconHTML = `<div class="notif-icon icon-warning">⚠️</div>`;
+
+                    html += `
+                        <div class="rich-notif-card ${n.is_new ? 'unread' : ''}">
+                            ${iconHTML}
+                            <div class="notif-content">
+                                <div class="notif-header-row">
+                                    <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 5px;">${n.title}</h3>
+                                    <span style="color: var(--text-muted); font-size: 0.85rem;">${n.time}</span>
+                                </div>
+                                <p style="color: var(--text-muted); line-height: 1.5;">${n.message}</p>
+                                <div class="notif-actions">
+                                    <button class="btn-sm btn-primary-sm">To'liq Ko'rish</button>
+                                    <button class="btn-sm btn-secondary-sm">Arxivlash</button>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                document.getElementById('notif-list-rich').innerHTML = html;
+            } catch (err) { console.error(err); }
+        }
+
+        async function analyzePDF() {
+            const fileInput = document.getElementById('pdfInput');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const resultsArea = document.getElementById('resultsArea');
+
+            if (fileInput.files.length === 0) { alert("PDF yuklang!"); return; }
+
+            analyzeBtn.disabled = true;
+            resultsArea.innerHTML = '';
+            runTerminalAnimation();
+
+            const formData = new FormData(); formData.append("file", fileInput.files[0]);
+
+            try {
+                const response = await fetch('/analyze', { method: 'POST', body: formData });
+                const json = await response.json();
+
+                document.getElementById('aiTerminal').classList.remove('active');
+
+                if (!response.ok) throw new Error(json.detail || "Server xatosi");
+
+                if (json.data.length === 0) {
+                    resultsArea.innerHTML = `<div class="card" style="text-align:center; border-color: var(--success);"><h3 style="color: var(--success);">✅ Hujjat Toza</h3></div>`;
+                } else {
+                    json.data.forEach(item => {
+                        let headerColor = item.severity === 'High' ? '#fca5a5' : item.severity === 'Medium' ? '#fcd34d' : '#7dd3fc';
+                        resultsArea.innerHTML += `
+                            <div class="result-card severity-${item.severity}">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                                    <strong style="font-size:1.2rem; color:${headerColor};">${item.trick_name}</strong>
+                                    <span style="background:rgba(255,255,255,0.1); padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold;">XAVF: ${item.severity}</span>
+                                </div>
+                                <div style="margin-bottom: 1rem;">
+                                    <span style="background: #0f172a; border: 1px solid #1e293b; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 8px; color: var(--accent-blue);">📄 ${item.page_info}</span>
+                                    <span style="background: #0f172a; border: 1px solid #1e293b; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: var(--accent-blue);">📑 ${item.line_info}</span>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; font-style: italic; color: #cbd5e1; margin-bottom: 1rem; border-left: 3px solid var(--border-color);">"${item.quoted_text}"</div>
+                                <p style="color: var(--text-muted); font-size: 0.95rem;"><strong style="color:white;">Xulosa:</strong> ${item.explanation}</p>
+                            </div>`;
+                    });
+
+                    // --- ACTION PANEL INJECTION ---
+                    resultsArea.innerHTML += `
+                        <div class="card" style="margin-top: 2rem; border-color: var(--accent-indigo); background: rgba(99, 102, 241, 0.05);">
+                            <h3 class="section-title" style="border-bottom: none; margin-bottom: 0.5rem;">
+                                <span><span style="font-size: 1.2rem; margin-right: 8px;">🏛️</span> Vakolatli organlarga yuborish</span>
+                            </h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                                Tahlil xulosasi avtomatik tarzda rasmiy dalolatnoma shakliga o'tkaziladi va davlat idoralariga yopiq xavfsiz kanal orqali uzatiladi.
+                            </p>
+                            <div style="display: flex; gap: 1rem;">
+                                <button onclick="forwardReport('O\\'zbekiston Respublikasi Bosh Prokuraturasi', '#ef4444')" class="btn-analyze" style="background: linear-gradient(135deg, #ef4444, #b91c1c); flex: 1;">
+                                    ⚖️ Bosh Prokuraturaga
+                                </button>
+                                <button onclick="forwardReport('Korrupsiyaga qarshi kurashish agentligi', '#f59e0b')" class="btn-analyze" style="background: linear-gradient(135deg, #f59e0b, #d97706); flex: 1;">
+                                    🛡️ Antikorrupsiya Agentligiga
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('aiTerminal').classList.remove('active');
+                resultsArea.innerHTML = `<div class="card" style="border-color: var(--danger);"><h3 style="color: var(--danger);">❌ Xatolik</h3><p>${error.message}</p></div>`;
+            } finally {
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        // --- Forwarding Report Logic ---
+        function forwardReport(agencyName, color) {
+            const modal = document.getElementById('reportModal');
+            const icon = document.getElementById('modalIcon');
+            const title = document.getElementById('modalTitle');
+            const desc = document.getElementById('modalDesc');
+            const bar = document.getElementById('encryptBar');
+            const status = document.getElementById('modalStatus');
+            const closeBtn = document.getElementById('closeModalBtn');
+
+            modal.classList.add('active');
+            closeBtn.style.display = 'none';
+            icon.innerText = '🔐';
+            title.innerText = "Ma'lumotlar Shifrlanmoqda...";
+            title.style.color = '#fff';
+            desc.innerText = `${agencyName} serverlari bilan aloqa o'rnatilmoqda.`;
+            status.style.color = color;
+            bar.style.width = '0%';
+            bar.style.background = `linear-gradient(90deg, var(--accent-blue), ${color})`;
+
+            let progress = 0;
+            status.innerText = '[Kanal tayyorlanmoqda...]';
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 100) progress = 100;
+
+                bar.style.width = `${progress}%`;
+
+                if (progress > 30 && progress < 60) {
+                    status.innerText = '[Dalillar shifrlanmoqda (AES-256)...]';
+                } else if (progress >= 60 && progress < 90) {
+                    status.innerText = '[Paket yuborilmoqda...]';
+                }
+
+                if (progress === 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        icon.innerText = '✅';
+                        title.innerText = "Muvaffaqiyatli Yuborildi!";
+                        title.style.color = 'var(--success)';
+                        desc.innerText = `Hujjat raqami: #TR-${Math.floor(Math.random() * 10000)}. Qabul qiluvchi: ${agencyName}.`;
+                        status.innerText = '[Sessiya yopildi]';
+                        status.style.color = 'var(--success)';
+                        closeBtn.style.display = 'block';
+                    }, 500);
+                }
+            }, 300);
+        }
+
+        function closeModal() {
+            document.getElementById('reportModal').classList.remove('active');
+        }
+
+        // --- Chart Initialization (For Dashboard) ---
+        function initCharts() {
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctxTrend, { type: 'line', data: { labels: ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'], datasets: [{ label: 'Anomaliyalar', data: [12, 19, 15, 25, 22, 30, 18], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 3, tension: 0.4, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } } } });
+            const ctxSeverity = document.getElementById('severityChart').getContext('2d');
+            new Chart(ctxSeverity, { type: 'doughnut', data: { labels: ['High Risk', 'Medium Risk', 'Low Risk'], datasets: [{ data: [45, 65, 32], backgroundColor: ['#ef4444', '#f59e0b', '#0ea5e9'], borderWidth: 0, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: '#f8fafc', padding: 20, font: { size: 12 } } } } } });
+        }
+
+        // --- Boot ---
+        window.onload = () => { fetchDashboardData(); fetchNotifications(); initCharts(); };
+    </script>
+</body>
+</html>

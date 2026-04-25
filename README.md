@@ -1,69 +1,34 @@
-# 🛡️ AuditorNazorat: Anti-Corruption AI Interface
+# 🕵️‍♂️ GovTech AI Auditor Pro
 
-**AuditorNazorat** — davlat xaridlaridagi shubhali tenderlarni va yashirin korrupsion sxemalarni aniqlash uchun mo'ljallangan intellektual veb-platforma. Ushbu frontend ilovasi **Gemini 2.5 Flash** imkoniyatlaridan foydalanib, foydalanuvchiga real vaqt rejimida tahliliy hisobotlarni taqdim etadi.
+An enterprise-grade, AI-driven Document Intelligence System designed to detect "tricky moments," hidden corruption loopholes, and artificially inflated prices in government procurement documents (tenders, agreements, and auctions).
 
----
+Powered by **Gemini 2.5 Flash**, this system reads massive PDF contracts, identifies anti-competitive clauses (like fake warranties, impossible deadlines, and vendor lock-in), and pinpoints the exact page and line number for auditors.
 
-## 🏗️ Loyiha Strukturasi (File Structure)
+## ✨ Key Features
 
-Rasmda ko'rsatilganidek, loyiha zamonaviy va modulli arxitekturaga ega:
+* **🧠 Deep AI Scanning:** Analyzes dense legal text in Uzbek to find complex corruption schemes based on official procurement laws (Lex.uz).
+* **🎯 Precision Metadata:** Doesn't just flag issues; it provides the exact **Page and Line Number** where the loophole is buried.
+* **📊 Enterprise Command Center:** A sleek, dark-mode Single Page Application (SPA) featuring live Chart.js visualizations, system readiness metrics, and activity logs.
+* **⚡ Real-time Terminal Animation:** Provides visual feedback during the NLP vectorization and API analysis phases.
+* **🛡️ One-Click Reporting:** Includes a simulated secure forwarding module (AES-256) to instantly send detected dossiers to the Prosecutor General or Anti-Corruption Agency.
 
-*   **`src/services/geminiService.ts`**: Gemini API bilan aloqa o'rnatuvchi asosiy mantiqiy qatlam.
-*   **`src/App.tsx`**: Ilovaning asosiy kirish nuqtasi va interfeys komponenti.
-*   **`src/main.tsx`**: React ilovasini domga ulaydigan renderlash fayli.
-*   **`vite.config.ts`**: Vite yordamida loyihani tezkor build qilish va serverni sozlash fayli.
-*   **`tsconfig.json`**: TypeScript qoidalari va turlarni nazorat qilish sozlamalari.
+## 🛠️ Tech Stack
 
----
+* **Backend Engine:** FastAPI, Python 3.12+
+* **AI & Reasoning:** Google GenAI SDK (Gemini 2.5 Flash)
+* **Document Parsing:** PyMuPDF (`fitz`)
+* **Frontend UI:** Vanilla HTML, CSS (Custom Glassmorphism), JavaScript (SPA routing)
+* **Data Visualization:** Chart.js
+* **Package Manager:** `uv`
 
-## 🚀 Texnologik Stek
+## 📂 Project Structure
 
-*   **Framework:** React 18+ (Vite bilan)
-*   **Language:** TypeScript (Xavfsiz va tushunarli kod yozish uchun)
-*   **AI Integration:** Gemini API (Google AI SDK)
-*   **Styling:** Tailwind CSS / CSS Modules
-*   **Build Tool:** Vite (Tezkor va yengil ishlab chiqish muhiti)
-
----
-
-## 🛠️ O'rnatish va Ishga tushirish
-
-NVIDIA 720M kabi cheklangan resurslarda ham ushbu frontend ilovasi juda tez ishlaydi, chunki barcha og'ir hisob-kitoblar brauzer va Google bulutida bajariladi.
-
-1.  **Kutubxonalarni o'rnatish:**
-    ```bash
-    npm install
-    ```
-
-2.  **.env faylini sozlash:**
-    Loyiha ildiz papkasida `.env` faylini yarating va API kalitingizni kiriting:
-    ```env
-    VITE_GEMINI_API_KEY=sizning_maxfiy_kalitingiz
-    ```
-
-3.  **Lokal serverni ishga tushirish:**
-    ```bash
-    npm run dev
-    ```
-
----
-
-## 💡 Asosiy Funksionallik
-
-1.  **Document Upload:** Foydalanuvchi tender hujjatini (matn yoki rasm formatida) tizimga yuklaydi.
-2.  **AI Analysis:** `geminiService.ts` orqali matn Gemini 2.5 Flash modeliga tahlil uchun yuboriladi.
-3.  **Result Rendering:** Ilova topilgan "Red Flags" (shubhali bandlar)ni xavf darajasiga ko'ra ranglar bilan (Qizil, Sariq, Yashil) vizuallashtiradi.
-4.  **Export:** Tahlil natijalarini auditorlar uchun hisobot shaklida saqlash.
-
----
-
-## 🔐 Xavfsizlik
-
-*   API kalitlar `.env` fayli orqali boshqariladi va `git`ga yuklanmaydi.
-*   Foydalanuvchi yuklagan ma'lumotlar faqat tahlil davomida ishlatiladi va qurilma xotirasida uzoq vaqt saqlanib qolmaydi.
-
----
-
-## 🤝 Hamkorlik
-
-Ushbu loyiha korrupsiyaga qarshi kurashishda texnologiyaning o'rnini ko'rsatib berishga qaratilgan. Savollar yoki takliflar bo'lsa, **Issues** bo'limida qoldiring.
+```text
+AntiCorruption/
+├── .env                  # Environment variables (API Keys)
+├── requirements.txt      # Project dependencies
+├── main.py               # Core FastAPI server and Gemini logic
+├── mock_data.py          # Simulated databases for market prices and laws
+├── tricks_db.py          # Dictionary of specific Uzbek corruption schemes
+└── static/
+    └── index.html        # The complete Frontend SPA
